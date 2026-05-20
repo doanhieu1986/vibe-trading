@@ -9,77 +9,67 @@
 
 **Mô hình hoạt động:** `Request → Agent Processing → Tool Execution → Result Delivery`
 
-```
-┌─────────────────────────────────────────────────────────────────────┐
-│                        NGƯỜI DÙNG / CLIENT                          │
-│  (CLI / Web UI / MCP Plugin / API Client)                          │
-└────────────────────────────┬────────────────────────────────────────┘
-                             │ Gửi yêu cầu (prompt)
-                             ▼
-┌─────────────────────────────────────────────────────────────────────┐
-│                    FRONTEND LAYER                                   │
-│  ┌──────────────────────────────────────────────────────────────┐  │
-│  │  Web UI (React 19)  │  CLI (Rich TUI)  │  MCP Plugin        │  │
-│  │  - Chat interface   │  - Interactive   │  - Tool exposure   │  │
-│  │  - Settings         │  - Commands      │                    │  │
-│  │  - Run history      │  - Live display  │                    │  │
-│  └──────────────────────────────────────────────────────────────┘  │
-└─────────────────────────────┬────────────────────────────────────────┘
-                              │ HTTP/SSE/stdio
-                              ▼
-┌─────────────────────────────────────────────────────────────────────┐
-│                    API SERVER LAYER (FastAPI)                       │
-│  ┌──────────────────────────────────────────────────────────────┐  │
-│  │  Routes:                                                     │  │
-│  │  - /sessions (chat sessions)                                │  │
-│  │  - /runs (execute & history)                                │  │
-│  │  - /swarm (multi-agent teams)                               │  │
-│  │  - /upload (document & journal upload)                      │  │
-│  │  - /alpha (alpha zoo browser & bench)                       │  │
-│  │  - /settings (LLM & data source config)                     │  │
-│  └──────────────────────────────────────────────────────────────┘  │
-└─────────────────────────────┬────────────────────────────────────────┘
-                              │
-                    ┌─────────┴─────────┐
-                    ▼                   ▼
-      ┌──────────────────────┐  ┌──────────────────────┐
-      │  AGENT PROCESSING    │  │  SWARM EXECUTION     │
-      │  (Single LLM)        │  │  (Multi-Agent DAG)   │
-      └──────────────────────┘  └──────────────────────┘
-              │                           │
-              │  ┌───────────────────────┘
-              ▼  ▼
-┌─────────────────────────────────────────────────────────────────────┐
-│                    TOOL EXECUTION LAYER                             │
-│  ┌──────────────────────────────────────────────────────────────┐  │
-│  │  Tool Registry (31+ tools):                                  │  │
-│  │  - Backtest Tool        - Web Search Tool                    │  │
-│  │  - Memory Tools         - File I/O Tools                     │  │
-│  │  - Skill Management     - Factor Analysis                    │  │
-│  │  - Shadow Account       - Pattern Recognition               │  │
-│  └──────────────────────────────────────────────────────────────┘  │
-└──┬──────────────────────────────────────────────────────────────────┘
-   │
-   ├─────────────────┬────────────────────┬──────────────┬────────────┐
-   ▼                 ▼                    ▼              ▼            ▼
- ┌────┐         ┌─────────┐        ┌──────────┐   ┌──────────┐  ┌────────┐
- │DATA│         │BACKTEST │        │ANALYSIS │   │MEMORY &  │  │EXTERNAL│
- │LAYER        │ENGINES  │        │TOOLS    │   │SKILLS    │  │SOURCES │
- └────┘         └─────────┘        └──────────┘   └──────────┘  └────────┘
-   │                 │                   │            │             │
-   │                 │                   │            │             │
-   ▼                 ▼                   ▼            ▼             ▼
-┌──────────────┐ ┌─────────────────┐ ┌─────────────────┐ ┌──────────────┐ ┌────────────────┐
-│Data Loaders  │ │7 Backtest       │ │Analysis & Factors│ │Memory Layer  │ │LLM Providers   │
-│              │ │Engines          │ │                  │ │              │ │                │
-│📊 Tushare    │ │🇨🇳 A-share Eng  │ │📊 Alpha Zoo      │ │💾 Persistent │ │🤖 OpenAI       │
-│📊 AKShare    │ │🌎 Global Equity │ │🏢 Sector Analy   │ │📝 Memory CRUD│ │🤖 DeepSeek     │
-│₿ OKX         │ │₿ Crypto Engine  │ │⚖️ Multi-factor   │ │📚 Memory Idx │ │🤖 Gemini       │
-│📈 yfinance   │ │📈 China Futures │ │🎯 Pattern Match  │ │📍 Skills Ed  │ │🤖 Ollama       │
-│🌍 CCXT       │ │📊 Global Futures│ │📈 Technical      │ │              │ │+ 8 more        │
-│🇭🇰 Futu      │ │💱 Forex Engine  │ │👤 Shadow Account │ │              │ │                │
-│              │ │📞 Options Eng   │ │💰 Dividend Track │ │              │ │                │
-└──────────────┘ └─────────────────┘ └─────────────────┘ └──────────────┘ └────────────────┘
+```mermaid
+graph TD
+    User["👤 NGƯỜI DÙNG<br/>(CLI / Web / API / MCP)"]
+    
+    User -->|Prompt| FE["FRONTEND LAYER"]
+    
+    subgraph FE["🎨 FRONTEND LAYER"]
+        CLI["🖥️ CLI<br/>Rich TUI"]
+        Web["🌐 Web UI<br/>React 19"]
+        MCP2["🔌 MCP Plugin<br/>Tool Exposure"]
+    end
+    
+    FE -->|HTTP/SSE/stdio| API["⚙️ API SERVER<br/>FastAPI"]
+    
+    subgraph API["📡 API SERVER (FastAPI)"]
+        Sessions["/sessions"]
+        Runs["/runs"]
+        Swarm["/swarm"]
+        Upload["/upload"]
+        Alpha["/alpha"]
+        Settings["/settings"]
+    end
+    
+    API -->|Route| Process["PROCESSING"]
+    
+    subgraph Process["🤖 PROCESSING LAYER"]
+        Agent["🧠 Agent Loop<br/>LLM Planning"]
+        SwarmExec["🐝 Swarm Engine<br/>Multi-Agent DAG"]
+    end
+    
+    Process -->|Execute| Tools["🔧 TOOL EXECUTION<br/>31+ Tools"]
+    
+    Tools -->|Fetch| Data["📊 DATA LAYER<br/>6 Sources"]
+    Tools -->|Compute| Engines["🔬 BACKTEST ENGINES<br/>7 Types"]
+    Tools -->|Query| Memory["💾 MEMORY & SKILLS<br/>75+ Skills"]
+    Tools -->|Call| External["🌐 EXTERNAL<br/>LLM & APIs"]
+    
+    subgraph Data["📊 DATA LOADERS"]
+        D1["Tushare"]
+        D2["AKShare"]
+        D3["yfinance"]
+        D4["OKX/CCXT/Futu"]
+    end
+    
+    subgraph Engines["🔬 BACKTEST ENGINES"]
+        E1["🇨🇳 A-share"]
+        E2["🌎 Global Equity"]
+        E3["₿ Crypto"]
+        E4["📈 Futures"]
+        E5["💱 Forex"]
+    end
+    
+    subgraph Memory["💾 MEMORY & SKILLS"]
+        M1["Persistent Memory<br/>(.vibe-trading/)"]
+        M2["75+ Skills<br/>Domain Knowledge"]
+    end
+    
+    subgraph External["🌐 EXTERNAL SOURCES"]
+        L1["🤖 LLM Providers"]
+        L2["📡 Web APIs"]
+    end
 ```
 
 ---
@@ -99,24 +89,29 @@
 
 **🔄 Processing Steps:**
 
-```
-INPUT
-  │
-  ├─ 📝 Parse Text (NLP understanding)
-  ├─ 📄 Handle Files (→ ~/.vibe-trading/uploads/)
-  ├─ 🔄 Load Session history (from DB)
-  └─ 🧠 Query Persistent memory (FTS5)
-  │
-  ▼
-CONTEXT ASSEMBLY
-  ├─ 🔑 Session ID
-  ├─ 💬 Chat history (100-500 tokens)
-  ├─ 📌 Recalled memory (auto-recall)
-  ├─ 📎 File attachments
-  └─ 🧠 System prompt (75 skills + 31 tools)
-  │
-  ▼
-READY FOR AGENT ✅
+```mermaid
+graph TD
+    Input["📥 USER INPUT<br/>(Text / Files / API)"]
+    
+    Input -->|Parse| ParseText["📝 Parse Text<br/>(NLP)"]
+    Input -->|Handle| ParseFile["📄 Extract Files<br/>(→ ~/.vibe-trading/uploads/)"]
+    Input -->|Load| History["🔄 Load Session<br/>(from DB)"]
+    Input -->|Query| Memory2["🧠 Query Memory<br/>(FTS5 Search)"]
+    
+    ParseText -->|→| Context["🔗 CONTEXT ASSEMBLY"]
+    ParseFile -->|→| Context
+    History -->|→| Context
+    Memory2 -->|→| Context
+    
+    subgraph Context["🔗 CONTEXT ASSEMBLY"]
+        SessionID["🔑 Session ID"]
+        ChatHist["💬 Chat History<br/>(100-500 tokens)"]
+        RecallMem["📌 Recalled Memory<br/>(auto-recall)"]
+        Files["📎 File Attachments"]
+        SysPrompt["🧠 System Prompt<br/>(75 skills + 31 tools)"]
+    end
+    
+    Context -->|Ready| Agent["✅ READY FOR AGENT"]
 ```
 
 ---
@@ -125,55 +120,58 @@ READY FOR AGENT ✅
 
 **🤖 Agent là trái tim của Vibe-Trading.** Nó dùng LLM để lập kế hoạch và thực hiện:
 
-```
-🤖 LLM CALL (DeepSeek/OpenAI/Gemini/etc)
-  │
-  ├─ Input:
-  │  ├─ 75 Skills (domain knowledge)
-  │  ├─ 31 Tools (executable functions)
-  │  ├─ Chat history (5-layer compressed)
-  │  ├─ User prompt (current)
-  │  └─ Tool signatures (available)
-  │
-  ▼
-🧠 LLM THINKING
-  ├─ ✓ Analyze request
-  ├─ ✓ Plan steps
-  ├─ ✓ Select tools & skills
-  └─ ✓ Generate code (if backtest)
-  │
-  ▼
-🎯 TOOL SELECTION DECISION
-  │
-  ├─ 1️⃣ Single Tool:
-  │  ├─ run_backtest (strategy + params)
-  │  ├─ web_search (query)
-  │  └─ read_document (file path)
-  │
-  ├─ 2️⃣ Multiple Tools (parallel):
-  │  ├─ get_market_data + read_document
-  │  └─ factor_analysis + web_search
-  │
-  └─ 3️⃣ No Tools (LLM response only)
-  │
-  ▼
-🔧 TOOL EXECUTION → [See Giai Đoạn 3]
-  │
-  ▼
-📊 RESULTS PROCESSING
-  ├─ ❌ Error? → Retry/Fallback
-  ├─ ✅ Success? → Format output
-  └─ 🔄 Continue loop? → Yes
-  │
-  ▼
-🛑 STOP CONDITION?
-  ├─ ✓ LLM decides done
-  ├─ ⏱️ Token limit reached
-  ├─ ⏱️ Timeout exceeded
-  └─ 🚫 User cancel (Ctrl+C)
-  │
-  ▼
-💬 FINAL RESPONSE TO USER
+```mermaid
+graph TD
+    LLM["🤖 LLM CALL<br/>(DeepSeek/OpenAI/Gemini)"]
+    
+    LLM -->|Input| Input2["📥 INPUT"]
+    
+    subgraph Input2["📥 LLM INPUT"]
+        Skills["75 Skills<br/>(Domain Knowledge)"]
+        Tools2["31 Tools<br/>(Executable)"]
+        History2["Chat History<br/>(5-layer Compressed)"]
+        Prompt["User Prompt<br/>(Current)"]
+        Sigs["Tool Signatures<br/>(Available)"]
+    end
+    
+    Input2 -->|Process| Thinking["🧠 LLM THINKING"]
+    
+    subgraph Thinking["🧠 LLM THINKING"]
+        Analyze["✓ Analyze request"]
+        Plan["✓ Plan steps"]
+        Select["✓ Select tools & skills"]
+        Generate["✓ Generate code<br/>(if backtest)"]
+    end
+    
+    Thinking -->|Decide| Decision["🎯 TOOL SELECTION"]
+    
+    subgraph Decision["🎯 TOOL SELECTION DECISION"]
+        Single["1️⃣ Single Tool<br/>(run_backtest, web_search, etc)"]
+        Multiple["2️⃣ Multiple Tools<br/>(parallel execution)"]
+        None["3️⃣ No Tools<br/>(LLM response only)"]
+    end
+    
+    Decision -->|Execute| Execution["🔧 TOOL EXECUTION<br/>(See Giai Đoạn 3)"]
+    
+    Execution -->|Get Results| Processing["📊 RESULTS PROCESSING"]
+    
+    subgraph Processing["📊 RESULTS PROCESSING"]
+        Error["❌ Error?<br/>(Retry/Fallback)"]
+        Success["✅ Success?<br/>(Format output)"]
+        Continue["🔄 Continue loop?<br/>(Yes/No)"]
+    end
+    
+    Processing -->|Check| StopCond["🛑 STOP CONDITION?"]
+    
+    subgraph StopCond["🛑 STOP CONDITION"]
+        Done["✓ LLM decides done"]
+        TokenLim["⏱️ Token limit reached"]
+        Timeout["⏱️ Timeout exceeded"]
+        Cancel["🚫 User cancel Ctrl+C"]
+    end
+    
+    StopCond -->|No| Execution
+    StopCond -->|Yes| Response["💬 FINAL RESPONSE<br/>TO USER"]
 ```
 
 **💡 5-Layer History Compression:**
@@ -814,57 +812,72 @@ User Input:
 
 ## 🏗️ Component Interactions (Dependency Graph)
 
-```
-┌─────────────────────────────────────────────┐
-│           USER INTERFACE LAYER              │
-│  🖥️ CLI  |  🌐 Web UI  |  🔌 MCP Plugin    │
-└──────────────────────┬──────────────────────┘
-                       │ HTTP/SSE/stdio
-                       ▼
-    ┌──────────────────────────────────────────┐
-    │      API SERVER (FastAPI)                │
-    ├──────────────────────────────────────────┤
-    │ 💬 /sessions      │ 🔄 /messages        │
-    │ 🏃 /runs          │ 📤 /upload          │
-    │ 🐝 /swarm         │ 🎯 /alpha           │
-    │ ⚙️ /settings      │ 📊 /analytics       │
-    └──────────┬───────────────────┬──────────┘
-               │                   │
-    ┌──────────┴──────┐ ┌─────────┴────────┐
-    ▼                 ▼ ▼                  ▼
- ┌──────────┐  ┌──────────────┐  ┌────────────────┐
- │Agent Loop│  │Swarm Engine  │  │ Session DB     │
- ├──────────┤  ├──────────────┤  ├────────────────┤
- │LLM calls │  │DAG execution │  │📜 Chat history │
- │Tool calls│  │Multi-agent   │  │📦 Compression  │
- │Tracing   │  │Parallel flow │  │🔍 FTS5 search  │
- └────┬─────┘  └──┬───────────┘  └────────────────┘
-      │           │
-      └─────┬─────┘
-            │
-            ▼
-   ┌──────────────────────────┐
-   │  TOOL REGISTRY (31 tools)│
-   ├──────────────────────────┤
-   │🔬 run_backtest           │
-   │🔎 web_search, read_url   │
-   │📄 read_document          │
-   │💾 write_file             │
-   │📋 analyze_trade_journal  │
-   │... (26 more tools)       │
-   └────┬───────────┬──────┬──┴────────┬──────────┐
-        ▼           ▼      ▼           ▼          ▼
-   ┌────────┐ ┌──────────┐ ┌────────┐ ┌──────┐ ┌────────┐
-   │Backtest│ │Data      │ │Memory &│ │Skills│ │External│
-   │Engines │ │Loaders   │ │Persist │ │CRUD  │ │Sources │
-   ├────────┤ ├──────────┤ ├────────┤ ├──────┤ ├────────┤
-   │A-share │ │Tushare   │ │Markdwn │ │Editor│ │LLM (10+)
-   │HK/US   │ │AKShare   │ │FTS5    │ │Loader│ │Web APIs │
-   │Crypto  │ │yfinance  │ │Memory  │ │Alpha │ │Webhooks │
-   │Futures │ │OKX/CCXT  │ │Index   │ │Zoo   │ │Google   │
-   │Options │ │Futu      │ │        │ │      │ │+ more   │
-   │Composite│ │          │ │        │ │      │ │        │
-   └────────┘ └──────────┘ └────────┘ └──────┘ └────────┘
+```mermaid
+graph TD
+    UI["🎨 USER INTERFACE<br/>(CLI / Web / API / MCP)"]
+    
+    UI -->|HTTP/SSE/stdio| API["📡 API SERVER<br/>(FastAPI)"]
+    
+    subgraph API["📡 API SERVER"]
+        Sessions["💬 /sessions"]
+        Messages["🔄 /messages"]
+        Runs["🏃 /runs"]
+        Upload["📤 /upload"]
+        Swarm2["🐝 /swarm"]
+        Alpha["🎯 /alpha"]
+        Settings["⚙️ /settings"]
+    end
+    
+    API -->|Dispatch| Agent["🤖 Agent Loop"]
+    API -->|Dispatch| Swarm["🐝 Swarm Engine"]
+    API -->|Store/Query| SessionDB["💾 Session DB<br/>(SQLite)"]
+    
+    Agent -->|Execute| Tools["🔧 TOOL REGISTRY<br/>(31 Tools)"]
+    Swarm -->|Execute| Tools
+    
+    SessionDB -->|History| Agent
+    
+    subgraph Tools["🔧 TOOL REGISTRY"]
+        T1["🔬 run_backtest"]
+        T2["🔎 web_search"]
+        T3["📄 read_document"]
+        T4["💾 write_file"]
+        T5["📋 analyze_journal"]
+        T6["... +26 more"]
+    end
+    
+    Tools -->|Compute| Engines["🔬 BACKTEST ENGINES<br/>(7 Types)"]
+    Tools -->|Fetch| Loaders["📥 DATA LOADERS<br/>(6 Sources)"]
+    Tools -->|Query/Store| Memory["💾 MEMORY & SKILLS<br/>(Persistent)"]
+    Tools -->|Call| External["🌐 EXTERNAL<br/>(LLM + APIs)"]
+    
+    subgraph Engines["🔬 BACKTEST ENGINES"]
+        Engine1["🇨🇳 A-share"]
+        Engine2["🌎 GlobalEquity"]
+        Engine3["₿ Crypto"]
+        Engine4["📈 Futures"]
+        Engine5["💱 Forex"]
+        Engine6["📞 Options"]
+    end
+    
+    subgraph Loaders["📥 DATA LOADERS"]
+        Loader1["Tushare"]
+        Loader2["AKShare"]
+        Loader3["yfinance"]
+        Loader4["OKX/CCXT"]
+        Loader5["Futu"]
+    end
+    
+    subgraph Memory["💾 MEMORY & SKILLS"]
+        Mem1["Persistent Memory"]
+        Mem2["75+ Skills"]
+        Mem3["FTS5 Index"]
+    end
+    
+    subgraph External["🌐 EXTERNAL"]
+        Ext1["🤖 LLM Providers"]
+        Ext2["📡 Web APIs"]
+    end
 ```
 
 **Thành phần chính:**
@@ -951,75 +964,32 @@ Key constraints:
 
 ## 🎯 Summary: Information Flow Pipeline
 
-```
-┌─────────────────────────────────────────────┐
-│1️⃣  REQUEST INTAKE                          │
-│    User submits prompt/document             │
-└────────────────┬────────────────────────────┘
-                 │
-                 ▼
-┌─────────────────────────────────────────────┐
-│2️⃣  PARSING & CONTEXT ASSEMBLY              │
-│  ✓ Natural language understanding           │
-│  ✓ Session history retrieval                │
-│  ✓ Memory auto-recall (FTS5)                │
-│  ✓ System prompt assembly (75 skills)       │
-└────────────────┬────────────────────────────┘
-                 │
-                 ▼
-┌─────────────────────────────────────────────┐
-│3️⃣  AGENT PLANNING & DECISION               │
-│  🤖 LLM reasoning (Claude/DeepSeek/etc)    │
-│  📌 Skill selection (75 available)          │
-│  🔧 Tool selection (31 available)           │
-│  💻 Code generation (if backtest needed)    │
-└────────────────┬────────────────────────────┘
-                 │
-                 ▼
-┌─────────────────────────────────────────────┐
-│4️⃣  TOOL EXECUTION (Parallel/Sequential)   │
-│  📊 Data sourcing (6 sources + fallback)    │
-│  🔬 Computation (backtest, analysis)        │
-│  ✅ Validation (correctness checks)         │
-│  📡 Progress streaming (3s heartbeat)       │
-└────────────────┬────────────────────────────┘
-                 │
-                 ▼
-┌─────────────────────────────────────────────┐
-│5️⃣  RESULT AGGREGATION                      │
-│  📈 Metric computation (Sharpe, DD, etc)    │
-│  📦 Artifact generation (CSV, JSON, etc)    │
-│  🎨 Formatting (HTML, charts, etc)          │
-│  ⚠️ Error handling & fallback               │
-└────────────────┬────────────────────────────┘
-                 │
-                 ▼
-┌─────────────────────────────────────────────┐
-│6️⃣  PERSISTENCE & INDEXING                  │
-│  📋 Run card generation (metadata)          │
-│  💾 File storage (rundir)                   │
-│  📇 Database indexing (session search)      │
-│  📝 Memory updates (learn from session)     │
-└────────────────┬────────────────────────────┘
-                 │
-                 ▼
-┌─────────────────────────────────────────────┐
-│7️⃣  RESPONSE DELIVERY                       │
-│  🖥️ CLI: Text output + file paths           │
-│  🌐 Web: SSE stream + dashboard             │
-│  📡 API: JSON response + artifacts          │
-│  🔌 MCP: Structured tool outputs            │
-└────────────────┬────────────────────────────┘
-                 │
-                 ▼
-┌─────────────────────────────────────────────┐
-│8️⃣  USER INTERACTION & CONTINUATION         │
-│  👁️ /show - View full results              │
-│  📤 /pine - Export to TradingView           │
-│  🔄 /continue - Refine strategy             │
-│  💾 /remember - Save memory                 │
-│  🎯 /skill - Create reusable skill          │
-└─────────────────────────────────────────────┘
+```mermaid
+graph TD
+    Step1["1️⃣ REQUEST INTAKE<br/>User submits prompt/document"]
+    
+    Step1 -->|Parse| Step2["2️⃣ PARSING & CONTEXT<br/>NLP + History + Memory<br/>+ System Prompt"]
+    
+    Step2 -->|Plan| Step3["3️⃣ AGENT PLANNING<br/>LLM reasoning<br/>Skill & Tool selection<br/>Code generation"]
+    
+    Step3 -->|Execute| Step4["4️⃣ TOOL EXECUTION<br/>Data sourcing<br/>Computation<br/>Validation<br/>Progress streaming"]
+    
+    Step4 -->|Aggregate| Step5["5️⃣ RESULT AGGREGATION<br/>Metrics<br/>Artifacts<br/>Formatting<br/>Error handling"]
+    
+    Step5 -->|Store| Step6["6️⃣ PERSISTENCE<br/>Run card<br/>File storage<br/>DB indexing<br/>Memory updates"]
+    
+    Step6 -->|Send| Step7["7️⃣ RESPONSE DELIVERY<br/>CLI / Web / API / MCP<br/>Formatted output"]
+    
+    Step7 -->|Interact| Step8["8️⃣ USER CONTINUATION<br/>/show /pine<br/>/continue /remember<br/>/skill"]
+    
+    style Step1 fill:#e1f5ff
+    style Step2 fill:#f3e5f5
+    style Step3 fill:#fff3e0
+    style Step4 fill:#e8f5e9
+    style Step5 fill:#f1f8e9
+    style Step6 fill:#fce4ec
+    style Step7 fill:#ede7f6
+    style Step8 fill:#e0f2f1
 ```
 
 ---
