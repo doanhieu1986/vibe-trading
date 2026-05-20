@@ -2,7 +2,12 @@
 
 ## 📊 Tổng Quan Kiến Trúc Hệ Thống
 
-Vibe-Trading là một hệ thống AI-powered dùng để nghiên cứu tài chính và backtesting chiến lược. Hệ thống hoạt động theo mô hình **Request → Agent Processing → Tool Execution → Result Delivery**.
+**Vibe-Trading** là một hệ thống **AI-powered** dùng để:
+- 📈 Nghiên cứu tài chính & phân tích thị trường
+- 🔬 Backtesting chiến lược giao dịch
+- 🤖 Tự động hóa quyết định đầu tư
+
+**Mô hình hoạt động:** `Request → Agent Processing → Tool Execution → Result Delivery`
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
@@ -64,121 +69,122 @@ Vibe-Trading là một hệ thống AI-powered dùng để nghiên cứu tài ch
    │                 │                   │            │             │
    │                 │                   │            │             │
    ▼                 ▼                   ▼            ▼             ▼
-┌──────────┐   ┌──────────────┐  ┌──────────────┐ ┌──────────┐ ┌─────────┐
-│Data      │   │7 Backtest    │  │Factor        │ │Persistent│ │LLM      │
-│Loaders   │   │Engines:      │  │Analysis      │ │Memory    │ │Providers│
-│          │   │- A-share     │  │Alpha Zoo     │ │(.vibe-   │ │         │
-│- Tushare │   │- HK/US       │  │Sector        │ │trading/) │ │OpenAI   │
-│- AKShare │   │- Crypto      │  │Multi-factor  │ │          │ │DeepSeek │
-│- OKX     │   │- Futures     │  │Pattern Recog │ │Skills    │ │Gemini   │
-│- yfinance│   │- Forex       │  │Technical     │ │Creator   │ │Ollama   │
-│- CCXT    │   │- Options     │  │Shadow Acct   │ │Editor    │ │+ 8 more │
-│- Futu    │   │- Composite   │  │Dividend      │ │          │ │         │
-└──────────┘   └──────────────┘  └──────────────┘ └──────────┘ └─────────┘
+┌──────────────┐ ┌─────────────────┐ ┌─────────────────┐ ┌──────────────┐ ┌────────────────┐
+│Data Loaders  │ │7 Backtest       │ │Analysis & Factors│ │Memory Layer  │ │LLM Providers   │
+│              │ │Engines          │ │                  │ │              │ │                │
+│📊 Tushare    │ │🇨🇳 A-share Eng  │ │📊 Alpha Zoo      │ │💾 Persistent │ │🤖 OpenAI       │
+│📊 AKShare    │ │🌎 Global Equity │ │🏢 Sector Analy   │ │📝 Memory CRUD│ │🤖 DeepSeek     │
+│₿ OKX         │ │₿ Crypto Engine  │ │⚖️ Multi-factor   │ │📚 Memory Idx │ │🤖 Gemini       │
+│📈 yfinance   │ │📈 China Futures │ │🎯 Pattern Match  │ │📍 Skills Ed  │ │🤖 Ollama       │
+│🌍 CCXT       │ │📊 Global Futures│ │📈 Technical      │ │              │ │+ 8 more        │
+│🇭🇰 Futu      │ │💱 Forex Engine  │ │👤 Shadow Account │ │              │ │                │
+│              │ │📞 Options Eng   │ │💰 Dividend Track │ │              │ │                │
+└──────────────┘ └─────────────────┘ └─────────────────┘ └──────────────┘ └────────────────┘
 ```
 
 ---
 
 ## 🔄 Luồng Xử Lý Thông Tin Chi Tiết
 
-### **Giai Đoạn 1: Tiếp Nhận Yêu Cầu (Request Ingestion)**
+### **Giai Đoạn 1️⃣: Tiếp Nhận Yêu Cầu (Request Ingestion)**
+
+**📥 Input Sources:**
+
+| Nguồn | Ví Dụ | Format |
+|---|---|---|
+| 🖥️ **CLI** | `vibe backtest BTC MACD` | Text prompt |
+| 🌐 **Web UI** | Chat + file upload | Text + files |
+| 📡 **API** | `POST /sessions/{id}/messages` | JSON |
+| 🔌 **MCP** | `vibe-trading.backtest()` | Tool call |
+
+**🔄 Processing Steps:**
 
 ```
-User Input (tự nhiên hoặc tài liệu)
-    │
-    ├─ Nguồn:
-    │  ├─ CLI prompt: "Backtest BTC MACD strategy"
-    │  ├─ Web chat: Gắn file PDF
-    │  ├─ API JSON: POST /sessions/{id}/messages
-    │  └─ MCP tool call: vibe-trading.backtest()
-    │
-    ▼
-Parse Input
-    │
-    ├─ Text: Nhập từ tự nhiên (NLP)
-    ├─ File: Tải lên → Lưu tại ~/.vibe-trading/uploads/
-    ├─ Context: Lấy session history từ DB
-    └─ Memory: Truy vấn persistent memory (FTS5)
-    │
-    ▼
-Session Context Assembly
-    │
-    ├─ Session ID (tương tác hiện tại)
-    ├─ Chat history (100-500 tokens gần đây)
-    ├─ Recalled memory (tự động gợi ý từ persistent)
-    ├─ File attachments (PDF, CSV, Excel)
-    └─ System prompt (80 skills + tool list)
-    │
-    ▼
-Ready for Agent
+INPUT
+  │
+  ├─ 📝 Parse Text (NLP understanding)
+  ├─ 📄 Handle Files (→ ~/.vibe-trading/uploads/)
+  ├─ 🔄 Load Session history (from DB)
+  └─ 🧠 Query Persistent memory (FTS5)
+  │
+  ▼
+CONTEXT ASSEMBLY
+  ├─ 🔑 Session ID
+  ├─ 💬 Chat history (100-500 tokens)
+  ├─ 📌 Recalled memory (auto-recall)
+  ├─ 📎 File attachments
+  └─ 🧠 System prompt (75 skills + 31 tools)
+  │
+  ▼
+READY FOR AGENT ✅
 ```
 
 ---
 
-### **Giai Đoạn 2: Xử Lý Bởi Agent (Agent Loop)**
+### **Giai Đoạn 2️⃣: Xử Lý Bởi Agent (Agent Loop)**
 
-Agent là trái tim của Vibe-Trading. Nó dùng LLM để lập kế hoạch và thực hiện:
+**🤖 Agent là trái tim của Vibe-Trading.** Nó dùng LLM để lập kế hoạch và thực hiện:
 
 ```
-LLM Call (DeepSeek, OpenAI, Gemini, etc.)
-    │
-    ├─ Input:
-    │  ├─ System prompt (75 kỹ năng + 31 tools)
-    │  ├─ Chat history (compressed 5-layer)
-    │  ├─ Current user prompt
-    │  └─ Available tool signatures
-    │
-    ▼
-LLM Thinking (Reasoning models)
-    │
-    ├─ Phân tích yêu cầu
-    ├─ Lập kế hoạch các bước
-    ├─ Chọn tools & skills phù hợp
-    └─ (Optional) Tạo mã Python (nếu backtest)
-    │
-    ▼
-Tool Selection Decision
-    │
-    ├─ Single Tool Call:
-    │  ├─ run_backtest (strategy code + params)
-    │  ├─ web_search (query)
-    │  ├─ read_document (PDF/Excel path)
-    │  └─ ... (29 tools khác)
-    │
-    ├─ Multiple Tool Calls (parallel):
-    │  ├─ get_market_data + read_document
-    │  └─ factor_analysis + web_search
-    │
-    └─ No Tools (response only):
-       └─ Phản hồi từ LLM knowledge
-    │
-    ▼
-Tool Execution (xem Giai Đoạn 3)
-    │
-    ▼
-Tool Results Processing
-    │
-    ├─ Lỗi: Retry hoặc fallback
-    ├─ Thành công: Formats output
-    └─ Tiếp tục vòng lặp nếu cần
-    │
-    ▼
-Stop Condition
-    │
-    ├─ LLM quyết định dừng
-    ├─ Hoặc: Token limit / timeout
-    ├─ Hoặc: User cancel (Ctrl+C)
-    │
-    ▼
-Final Response to User
+🤖 LLM CALL (DeepSeek/OpenAI/Gemini/etc)
+  │
+  ├─ Input:
+  │  ├─ 75 Skills (domain knowledge)
+  │  ├─ 31 Tools (executable functions)
+  │  ├─ Chat history (5-layer compressed)
+  │  ├─ User prompt (current)
+  │  └─ Tool signatures (available)
+  │
+  ▼
+🧠 LLM THINKING
+  ├─ ✓ Analyze request
+  ├─ ✓ Plan steps
+  ├─ ✓ Select tools & skills
+  └─ ✓ Generate code (if backtest)
+  │
+  ▼
+🎯 TOOL SELECTION DECISION
+  │
+  ├─ 1️⃣ Single Tool:
+  │  ├─ run_backtest (strategy + params)
+  │  ├─ web_search (query)
+  │  └─ read_document (file path)
+  │
+  ├─ 2️⃣ Multiple Tools (parallel):
+  │  ├─ get_market_data + read_document
+  │  └─ factor_analysis + web_search
+  │
+  └─ 3️⃣ No Tools (LLM response only)
+  │
+  ▼
+🔧 TOOL EXECUTION → [See Giai Đoạn 3]
+  │
+  ▼
+📊 RESULTS PROCESSING
+  ├─ ❌ Error? → Retry/Fallback
+  ├─ ✅ Success? → Format output
+  └─ 🔄 Continue loop? → Yes
+  │
+  ▼
+🛑 STOP CONDITION?
+  ├─ ✓ LLM decides done
+  ├─ ⏱️ Token limit reached
+  ├─ ⏱️ Timeout exceeded
+  └─ 🚫 User cancel (Ctrl+C)
+  │
+  ▼
+💬 FINAL RESPONSE TO USER
 ```
 
-**Lưu ý:** Agent loop có **5-layer compression**:
-- Lớp 1: Chat history (full)
-- Lớp 2: Lấy mẫu (sampling)
-- Lớp 3: Token bucketing
-- Lớp 4: Semantic clustering
-- Lớp 5: Summarization
+**💡 5-Layer History Compression:**
+
+| Layer | Method | Purpose |
+|---|---|---|
+| 1️⃣ | Full | Keep complete history |
+| 2️⃣ | Sampling | Take every N-th message |
+| 3️⃣ | Token bucketing | Group by token count |
+| 4️⃣ | Semantic clustering | Merge similar topics |
+| 5️⃣ | Summarization | Compress to summary |
 
 Điều này giúp các phiên dài vẫn vừa trong context window.
 
@@ -525,83 +531,94 @@ Optional: Export/Continue
 
 ## 🧠 Memory & Persistence Layer
 
-Vibe-Trading có hai loại bộ nhớ:
+Vibe-Trading có **2 loại bộ nhớ:**
 
-### **1. Session Memory (Tạm thời)**
+### **1️⃣ Session Memory (Tạm thời)**
 
-```
-Session {
-  id: str
-  created_at: datetime
-  messages: [
-    {role: "user", content: "..."},
-    {role: "assistant", content: "..."}
-  ]
-  tools_called: [
-    {name: "run_backtest", output: {...}}
-  ]
-  compression_state: {...}  # 5-layer compression
+**Cấu trúc:**
+```json
+{
+  "id": "session_abc123",
+  "created_at": "2024-12-20T10:00:00Z",
+  "messages": [
+    {"role": "user", "content": "..."},
+    {"role": "assistant", "content": "..."}
+  ],
+  "tools_called": [
+    {"name": "run_backtest", "output": {...}}
+  ],
+  "compression_state": {...}  // 5-layer compression
 }
-
-Lưu tại: ~/.vibe-trading/sessions/{session_id}.db (SQLite)
 ```
 
-Được dùng để:
-- Lưu chat history
-- Cross-session search (FTS5)
-- Compression khi session dài
+**Lưu tại:** `~/.vibe-trading/sessions/{session_id}.db` (SQLite)
 
-### **2. Persistent Memory (Bền vững)**
+**Chức năng:**
 
+| Chức năng | Mô Tả |
+|---|---|
+| 💬 Chat History | Lưu tất cả messages trong session |
+| 🔍 FTS5 Search | Tìm kiếm nội dung cross-session |
+| 📦 Compression | 5-layer compression cho session dài |
+| 📊 Tool Tracking | Ghi lại tất cả tool calls & outputs |
+
+### **2️⃣ Persistent Memory (Bền vững)**
+
+**Cấu trúc:**
+```markdown
+---
+name: my-rule-set
+type: "rule"  # note | insight | rule
+tags: ["preference", "risk-management"]
+created_at: 2024-12-20T10:00:00Z
+updated_at: 2024-12-20T15:30:00Z
+---
+
+Content here...
 ```
-Memory {
-  name: str (user-defined)
-  content: str (markdown)
-  tags: [str]
-  created_at: datetime
-  updated_at: datetime
-  type: "note" | "insight" | "rule"
-}
 
-Lưu tại: ~/.vibe-trading/memory/{slug}.md
-Index: ~/.vibe-trading/memory/.index.json (FTS5)
+**Lưu tại:** 
+- 📄 Files: `~/.vibe-trading/memory/{slug}.md`
+- 📇 Index: `~/.vibe-trading/memory/.index.json` (FTS5)
+
+**Dùng để lưu:**
+
+| Loại | Ví Dụ |
+|---|---|
+| 💡 Preferences | "Tôi thích RSI strategies" |
+| 📌 Insights | "Pattern X works trong Y condition" |
+| 📏 Rules | "Max 10% drawdown" |
+| ✅ Checklists | "Pre-trade checklist" |
+| 📚 Knowledge | "Công thức tính Sharpe ratio" |
+
+**Auto-recall bởi Agent:**
 ```
-
-Được dùng để:
-- Lưu preferences ("Tôi thích RSI strategies")
-- Lưu insights ("Pattern X works in Y condition")
-- Lưu rules ("Max 10% drawdown")
-
-Auto-recalled bởi agent:
-```
-User: "Create a strategy fitting my profile"
-Agent: [Searches memory] "User prefers RSI + max 10% DD + 5-20 day hold"
+👤 User: "Create a strategy fitting my profile"
+🤖 Agent: [Tự động tìm kiếm memory]
+💬 Output: "User prefers RSI + max 10% DD + 5-20 day hold"
 ```
 
 ---
 
 ## 📈 Data Sources & Market Coverage
 
-```
-Market Type          Primary Source    Fallback 1        Fallback 2
-─────────────────────────────────────────────────────────────────
-A-shares (CSI300)    Tushare          AKShare           
-HK Equities          yfinance         Futu              AKShare
-US Equities          yfinance         AKShare           
-Crypto               OKX              CCXT (100+)       
-Futures (China)      AKShare          Tushare           
-Forex                AKShare          yfinance          
-Options              IVX (limited)    CBOE              
+| Loại Thị Trường | Nguồn Chính | Fallback 1 | Fallback 2 |
+|---|---|---|---|
+| 🇨🇳 A-shares (CSI300) | Tushare | AKShare | — |
+| 🇭🇰 HK Equities | yfinance | Futu | AKShare |
+| 🇺🇸 US Equities | yfinance | AKShare | — |
+| ₿ Crypto | OKX | CCXT (100+) | — |
+| 📊 Futures (China) | AKShare | Tushare | — |
+| 💱 Forex | AKShare | yfinance | — |
+| 📈 Options | IVX | CBOE | — |
 
-Auto-fallback nếu primary fails:
-  1. Detect failure
-  2. Try fallback 1
-  3. Try fallback 2
-  4. Raise error with options
+**Auto-fallback nếu Primary fails:**
+1. ❌ Detect failure
+2. 🔄 Try fallback 1
+3. 🔄 Try fallback 2
+4. ⚠️ Raise error with options
 
-Caching:
-  ~/.vibe-trading/cache/{symbol}_{date_range}.parquet
-```
+**Caching:** `~/.vibe-trading/cache/{symbol}_{date_range}.parquet`
 
 ---
 
@@ -609,84 +626,97 @@ Caching:
 
 ### **75 Skills (Domain Knowledge)**
 
-```
+**Skill Structure:**
+```markdown
 Skill = Markdown file + Metadata
-  ├─ Name: "technical-basic"
-  ├─ Category: "Strategy"
-  ├─ Tools used: ["get_market_data", "pattern_recognition"]
-  ├─ Description: "Basic technical analysis patterns"
-  └─ Content:
+  📄 Name: "technical-basic"
+  📁 Category: "Strategy"
+  🔗 Tools used: ["get_market_data", "pattern_recognition"]
+  📝 Description: "Basic technical analysis patterns"
+  📋 Content:
      ├─ Concept explanation
      ├─ When to use
      ├─ Example code
      └─ Related skills
-
-Lưu tại: ~/.vibe-trading/skills/{skill_name}.md
-Bundled: agent/src/skills/*/
-System prompt includes all 75 skill descriptions
 ```
 
-Agent có thể:
-- **Load skill**: `/load technical-basic`
-- **List skills**: `/skills`
-- **Create skill**: Agent → `save_skill()` tool
-- **Edit skill**: Agent → `patch_skill()` tool
-- **Delete skill**: Agent → `delete_skill()` tool
+**Storage & Loading:**
+- 📍 Location: `~/.vibe-trading/skills/{skill_name}.md`
+- 📦 Bundled: `agent/src/skills/*/`
+- 🧠 System prompt: All 75 skills loaded
+
+**Agent Commands:**
+
+| Command | Action | Example |
+|---|---|---|
+| `/load` | Load specific skill | `/load technical-basic` |
+| `/skills` | List all skills | `/skills` |
+| `save_skill()` | Create new skill | Agent tool call |
+| `patch_skill()` | Edit skill | Agent tool call |
+| `delete_skill()` | Remove skill | Agent tool call |
 
 ### **31 Tools (Execution)**
 
-```
+**Tool Architecture:**
+```python
 Tool = Python class extends ToolBase
   ├─ name: "run_backtest"
-  ├─ description: "..."
-  ├─ input_schema: {type, properties, required}
+  ├─ description: "Backtests a strategy..."
+  ├─ input_schema: {...}  # JSON schema
   ├─ execute(params) → result
-  └─ progress_callback() → updates
-
-Registry:
-  ├─ Auto-discover từ agent/src/tools/
-  ├─ Load trước khi start agent
-  ├─ Available via LLM tool_use
-  └─ Exposed qua MCP server (22/31)
+  └─ progress_callback() → updates (streaming)
 ```
+
+**Tool Registry:**
+
+| Aspect | Details |
+|---|---|
+| 🔍 Discovery | Auto-discover từ `agent/src/tools/` |
+| 🚀 Loading | Preload trước khi start agent |
+| 🤖 LLM Access | Available via `tool_use` feature |
+| 🔌 MCP Exposure | 22/31 tools exposed via MCP server |
 
 ---
 
 ## 🔐 Security Architecture
 
-```
-Entry Point          Authentication         Authorization
-──────────────────────────────────────────────────────────────
-CLI (localhost)      None                   Full access
-Web UI (localhost)   Optional (Settings)    Full access
-Web UI (remote)      Settings API key       Scoped access
-API (localhost)      Optional               Full access
-API (remote)         Authorization header   Scoped access
-MCP (stdio)          No network             Full access
-MCP (SSE/HTTP)       Headers (optional)     Scoped access
+| Entry Point | Authentication | Authorization |
+|---|---|---|
+| 🖥️ CLI (localhost) | ❌ None | ✅ Full access |
+| 🌐 Web UI (localhost) | ⚙️ Optional | ✅ Full access |
+| 🌐 Web UI (remote) | 🔑 API key | 🔐 Scoped |
+| 📡 API (localhost) | ⚙️ Optional | ✅ Full access |
+| 📡 API (remote) | 🔑 Auth header | 🔐 Scoped |
+| 🔌 MCP (stdio) | ✅ Process-level | ✅ Full access |
+| 🔌 MCP (SSE/HTTP) | 🔑 Headers | 🔐 Scoped |
 
-Tool Exposure:
-  Local/CLI:
-    ├─ Shell tools: ✓ (exec_command)
-    ├─ File I/O: ✓ (Allowed roots)
-    └─ Web tools: ✓ (web_search, read_url)
+### Tool Exposure & Restrictions
 
-  Remote API:
-    ├─ Shell tools: ✗ (unless VIBE_TRADING_ENABLE_SHELL_TOOLS=1)
-    ├─ File I/O: ✓ (Restricted to allowed roots)
-    └─ Web tools: ✓
+**Local/CLI Environment:**
+| Tool Type | Status | Details |
+|---|---|---|
+| Shell tools | ✅ Enabled | `exec_command` available |
+| File I/O | ✅ Enabled | Allowed roots only |
+| Web tools | ✅ Enabled | `web_search`, `read_url` |
 
-Code Execution:
-  Strategy validation:
-    ├─ AST parsing (no arbitrary imports)
-    ├─ Lookahead guard (no future data)
-    └─ Safe defaults (max drawdown checks)
+**Remote API Environment:**
+| Tool Type | Status | Details |
+|---|---|---|
+| Shell tools | ❌ Disabled | Unless `VIBE_TRADING_ENABLE_SHELL_TOOLS=1` |
+| File I/O | ⚠️ Restricted | Allowed roots only |
+| Web tools | ✅ Enabled | Full web access |
 
-Path Validation:
-  ├─ Allowed roots: ~/.vibe-trading/uploads/, ./uploads/, ./data/
-  ├─ Extra: VIBE_TRADING_ALLOWED_FILE_ROOTS env var
-  └─ No path traversal (containment check)
-```
+### Code Execution Safety
+
+**Strategy Validation:**
+- 🛡️ AST parsing — no arbitrary imports
+- 🛡️ Lookahead guard — no future data peeking
+- 🛡️ Safe defaults — max drawdown checks
+
+**Path Validation:**
+- ✅ Allowed roots: `~/.vibe-trading/uploads/`, `./uploads/`, `./data/`
+- ✅ Extra roots: `VIBE_TRADING_ALLOWED_FILE_ROOTS` env var
+- ✅ No path traversal (containment check)
 
 ---
 
@@ -778,71 +808,78 @@ User Input:
          └──────────────────────────────────────────┘
 ```
 
-**Tổng thời gian:** ~30 giây (phần lớn từ backtest engine)
+> **⏱️ Tổng thời gian:** ~**30 giây** (phần lớn từ backtest engine)
 
 ---
 
 ## 🏗️ Component Interactions (Dependency Graph)
 
 ```
-┌─────────────────────┐
-│  User Interface     │
-│  CLI / Web / MCP    │
-└──────────┬──────────┘
-           │
-           ▼
-┌─────────────────────────────────────┐
-│  API Server (FastAPI)               │
-├─────────────────────────────────────┤
-│  /sessions → Agent init             │
-│  /messages → Agent loop             │
-│  /runs → Query results              │
-│  /upload → Store documents          │
-│  /swarm → Swarm execution           │
-│  /alpha → Alpha zoo                 │
-│  /settings → Config                 │
-└──────────┬──────────────────────────┘
-           │
-    ┌──────┴──────────────┬──────────────┐
-    ▼                     ▼              ▼
-┌────────────┐  ┌──────────────────┐  ┌──────────────┐
-│Agent Loop  │  │Swarm Engine      │  │Session DB    │
-├────────────┤  ├──────────────────┤  ├──────────────┤
-│LLM calls   │  │DAG execution     │  │Chat history  │
-│Tool calls  │  │Multi-node teams  │  │Compression   │
-│Trace write │  │Progress streaming│  │FTS5 search   │
-└─────┬──────┘  └────────┬─────────┘  └──────────────┘
-      │                  │
-      │        ┌─────────┘
-      │        │
-      ▼        ▼
-  ┌──────────────────────────────┐
-  │  Tool Registry (31 tools)     │
-  ├──────────────────────────────┤
-  │ run_backtest                 │
-  │ web_search, read_url         │
-  │ read_document, read_file     │
-  │ write_file, execute_command  │
-  │ analyze_trade_journal        │
-  │ extract_shadow_strategy      │
-  │ ... (23 more)                │
-  └──────────────────────────────┘
-         │ │ │ │ │ │ │ │ │ │ │ │
-    ┌────┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─────────┐
-    ▼    ▼ ▼ ▼ ▼ ▼ ▼ ▼ ▼ ▼ ▼ ▼         ▼
-┌────────────┐ ┌──────────────┐ ┌──────────────┐ ┌────────────┐
-│Backtest    │ │Data Loaders  │ │Memory/Skills │ │External    │
-│Engines (7) │ │(6 sources)   │ │(.vibe-trade) │ │APIs/Web    │
-├────────────┤ ├──────────────┤ ├──────────────┤ ├────────────┤
-│A-share     │ │Tushare       │ │Persistent    │ │LLM         │
-│HK/US       │ │AKShare       │ │Memory        │ │Providers   │
-│Crypto      │ │yfinance      │ │Skill CRUD    │ │DuckDuckGo  │
-│Futures     │ │OKX           │ │Alpha zoo     │ │(100+ more) │
-│Forex       │ │CCXT          │ │registry      │ │            │
-│Options     │ │Futu          │ │              │ │            │
-│Composite   │ │              │ │              │ │            │
-└────────────┘ └──────────────┘ └──────────────┘ └────────────┘
+┌─────────────────────────────────────────────┐
+│           USER INTERFACE LAYER              │
+│  🖥️ CLI  |  🌐 Web UI  |  🔌 MCP Plugin    │
+└──────────────────────┬──────────────────────┘
+                       │ HTTP/SSE/stdio
+                       ▼
+    ┌──────────────────────────────────────────┐
+    │      API SERVER (FastAPI)                │
+    ├──────────────────────────────────────────┤
+    │ 💬 /sessions      │ 🔄 /messages        │
+    │ 🏃 /runs          │ 📤 /upload          │
+    │ 🐝 /swarm         │ 🎯 /alpha           │
+    │ ⚙️ /settings      │ 📊 /analytics       │
+    └──────────┬───────────────────┬──────────┘
+               │                   │
+    ┌──────────┴──────┐ ┌─────────┴────────┐
+    ▼                 ▼ ▼                  ▼
+ ┌──────────┐  ┌──────────────┐  ┌────────────────┐
+ │Agent Loop│  │Swarm Engine  │  │ Session DB     │
+ ├──────────┤  ├──────────────┤  ├────────────────┤
+ │LLM calls │  │DAG execution │  │📜 Chat history │
+ │Tool calls│  │Multi-agent   │  │📦 Compression  │
+ │Tracing   │  │Parallel flow │  │🔍 FTS5 search  │
+ └────┬─────┘  └──┬───────────┘  └────────────────┘
+      │           │
+      └─────┬─────┘
+            │
+            ▼
+   ┌──────────────────────────┐
+   │  TOOL REGISTRY (31 tools)│
+   ├──────────────────────────┤
+   │🔬 run_backtest           │
+   │🔎 web_search, read_url   │
+   │📄 read_document          │
+   │💾 write_file             │
+   │📋 analyze_trade_journal  │
+   │... (26 more tools)       │
+   └────┬───────────┬──────┬──┴────────┬──────────┐
+        ▼           ▼      ▼           ▼          ▼
+   ┌────────┐ ┌──────────┐ ┌────────┐ ┌──────┐ ┌────────┐
+   │Backtest│ │Data      │ │Memory &│ │Skills│ │External│
+   │Engines │ │Loaders   │ │Persist │ │CRUD  │ │Sources │
+   ├────────┤ ├──────────┤ ├────────┤ ├──────┤ ├────────┤
+   │A-share │ │Tushare   │ │Markdwn │ │Editor│ │LLM (10+)
+   │HK/US   │ │AKShare   │ │FTS5    │ │Loader│ │Web APIs │
+   │Crypto  │ │yfinance  │ │Memory  │ │Alpha │ │Webhooks │
+   │Futures │ │OKX/CCXT  │ │Index   │ │Zoo   │ │Google   │
+   │Options │ │Futu      │ │        │ │      │ │+ more   │
+   │Composite│ │          │ │        │ │      │ │        │
+   └────────┘ └──────────┘ └────────┘ └──────┘ └────────┘
 ```
+
+**Thành phần chính:**
+
+| Thành phần | Chức năng | Ví Dụ |
+|---|---|---|
+| 🎯 **User Interface** | Entry point cho users | CLI, Web UI, MCP |
+| 🔌 **API Server** | Route requests | FastAPI routes |
+| 🤖 **Agent Loop** | LLM reasoning & planning | Tool selection |
+| 🐝 **Swarm Engine** | Multi-agent orchestration | Debate, consensus |
+| 💾 **Session DB** | Chat history & compression | SQLite |
+| 🔧 **Tool Registry** | All executable tools | 31 tools |
+| 📊 **Backtest Engines** | Strategy evaluation | 7 market types |
+| 📥 **Data Loaders** | Market data fetching | 6 primary sources |
+| 🧠 **Memory Layer** | Persistent knowledge | User preferences |
 
 ---
 
@@ -915,72 +952,102 @@ Key constraints:
 ## 🎯 Summary: Information Flow Pipeline
 
 ```
-REQUEST
-  ↓
-PARSING & CONTEXT
-  ├─ Natural language understanding
-  ├─ Session history retrieval
-  ├─ Memory auto-recall
-  └─ System prompt assembly
-  ↓
-AGENT PLANNING
-  ├─ LLM reasoning
-  ├─ Skill selection (75 available)
-  ├─ Tool selection (31 available)
-  └─ Code generation (if needed)
-  ↓
-TOOL EXECUTION
-  ├─ Data sourcing (6 sources + fallback)
-  ├─ Computation (backtest, analysis, etc.)
-  ├─ Validation (correctness checks)
-  └─ Progress streaming
-  ↓
-RESULT AGGREGATION
-  ├─ Metric computation
-  ├─ Artifact generation
-  ├─ Formatting (JSON, CSV, HTML, etc.)
-  └─ Error handling
-  ↓
-PERSISTENCE
-  ├─ Run card generation
-  ├─ File storage (rundir)
-  ├─ Database indexing (session, search)
-  └─ Memory updates
-  ↓
-RESPONSE
-  ├─ CLI: Text + file paths
-  ├─ Web: SSE stream + dashboard
-  ├─ API: JSON response
-  └─ MCP: Structured outputs
-  ↓
-USER INTERACTION
-  ├─ View results (/show)
-  ├─ Export (/pine)
-  ├─ Continue (/continue)
-  ├─ Save memory (remember)
-  └─ Create skill (skill_writer)
+┌─────────────────────────────────────────────┐
+│1️⃣  REQUEST INTAKE                          │
+│    User submits prompt/document             │
+└────────────────┬────────────────────────────┘
+                 │
+                 ▼
+┌─────────────────────────────────────────────┐
+│2️⃣  PARSING & CONTEXT ASSEMBLY              │
+│  ✓ Natural language understanding           │
+│  ✓ Session history retrieval                │
+│  ✓ Memory auto-recall (FTS5)                │
+│  ✓ System prompt assembly (75 skills)       │
+└────────────────┬────────────────────────────┘
+                 │
+                 ▼
+┌─────────────────────────────────────────────┐
+│3️⃣  AGENT PLANNING & DECISION               │
+│  🤖 LLM reasoning (Claude/DeepSeek/etc)    │
+│  📌 Skill selection (75 available)          │
+│  🔧 Tool selection (31 available)           │
+│  💻 Code generation (if backtest needed)    │
+└────────────────┬────────────────────────────┘
+                 │
+                 ▼
+┌─────────────────────────────────────────────┐
+│4️⃣  TOOL EXECUTION (Parallel/Sequential)   │
+│  📊 Data sourcing (6 sources + fallback)    │
+│  🔬 Computation (backtest, analysis)        │
+│  ✅ Validation (correctness checks)         │
+│  📡 Progress streaming (3s heartbeat)       │
+└────────────────┬────────────────────────────┘
+                 │
+                 ▼
+┌─────────────────────────────────────────────┐
+│5️⃣  RESULT AGGREGATION                      │
+│  📈 Metric computation (Sharpe, DD, etc)    │
+│  📦 Artifact generation (CSV, JSON, etc)    │
+│  🎨 Formatting (HTML, charts, etc)          │
+│  ⚠️ Error handling & fallback               │
+└────────────────┬────────────────────────────┘
+                 │
+                 ▼
+┌─────────────────────────────────────────────┐
+│6️⃣  PERSISTENCE & INDEXING                  │
+│  📋 Run card generation (metadata)          │
+│  💾 File storage (rundir)                   │
+│  📇 Database indexing (session search)      │
+│  📝 Memory updates (learn from session)     │
+└────────────────┬────────────────────────────┘
+                 │
+                 ▼
+┌─────────────────────────────────────────────┐
+│7️⃣  RESPONSE DELIVERY                       │
+│  🖥️ CLI: Text output + file paths           │
+│  🌐 Web: SSE stream + dashboard             │
+│  📡 API: JSON response + artifacts          │
+│  🔌 MCP: Structured tool outputs            │
+└────────────────┬────────────────────────────┘
+                 │
+                 ▼
+┌─────────────────────────────────────────────┐
+│8️⃣  USER INTERACTION & CONTINUATION         │
+│  👁️ /show - View full results              │
+│  📤 /pine - Export to TradingView           │
+│  🔄 /continue - Refine strategy             │
+│  💾 /remember - Save memory                 │
+│  🎯 /skill - Create reusable skill          │
+└─────────────────────────────────────────────┘
 ```
 
 ---
 
 ## 🔍 Key Design Principles
 
-1. **Stateless Agent Loop** - Compress history, no long-term state tracking
-2. **Tool-Centric** - Agent decides WHAT, tools execute HOW
-3. **Data Fallback** - Multiple sources, automatic retry
-4. **Persistent Memory** - Cross-session learning + skill reuse
-5. **Streaming Results** - Long operations show progress (3s heartbeat)
-6. **Reproducibility** - Every run generates run cards for audit
-7. **Security by Default** - Local fast, remote restricted
-8. **Modular Skills** - 75 domain-specific modules, auto-discoverable
-9. **Multi-LLM Support** - Provider-agnostic (OpenAI, DeepSeek, Ollama, etc.)
-10. **Cloud-Ready** - Docker, API-first, SSE streaming
+| # | Nguyên Tắc | Mô Tả |
+|---|---|---|
+| 1️⃣ | 🧠 **Stateless Agent Loop** | Compress history, no long-term state tracking |
+| 2️⃣ | 🛠️ **Tool-Centric** | Agent decides WHAT, tools execute HOW |
+| 3️⃣ | 🔄 **Data Fallback** | Multiple sources, automatic retry |
+| 4️⃣ | 💾 **Persistent Memory** | Cross-session learning + skill reuse |
+| 5️⃣ | 📡 **Streaming Results** | Long operations show progress (3s heartbeat) |
+| 6️⃣ | 📋 **Reproducibility** | Every run generates run cards for audit |
+| 7️⃣ | 🔐 **Security by Default** | Local fast, remote restricted |
+| 8️⃣ | 🧩 **Modular Skills** | 75 domain-specific modules, auto-discoverable |
+| 9️⃣ | 🤖 **Multi-LLM Support** | Provider-agnostic (OpenAI, DeepSeek, Ollama, etc.) |
+| 🔟 | ☁️ **Cloud-Ready** | Docker, API-first, SSE streaming |
 
 ---
 
-**Hiểu rõ luồng này sẽ giúp bạn:**
-- ✅ Mở rộng với tools/skills mới
-- ✅ Debug issues
-- ✅ Tối ưu hóa performance
-- ✅ Tích hợp dữ liệu custom
-- ✅ Customize agent hành vi
+## ✨ Hiểu Rõ Luồng Này Sẽ Giúp Bạn:
+
+| Mục Đích | Chi Tiết |
+|---|---|
+| 🧩 **Mở rộng** | Thêm tools/skills mới hoặc tích hợp data sources |
+| 🐛 **Debug** | Trace issues từ input → agent → output |
+| ⚡ **Tối ưu hóa** | Cải thiện speed (caching, compression, parallel execution) |
+| 🔗 **Tích hợp Custom** | Kết nối dữ liệu từ broker/API riêng |
+| 🎯 **Tùy chỉnh Agent** | Modify system prompt, change LLM provider, customize tools |
+| 📚 **Scalability** | Thêm backtest engines, data loaders, analysis tools |
