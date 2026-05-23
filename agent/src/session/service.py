@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import asyncio
 import concurrent.futures
+import os
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, Optional
@@ -252,7 +253,7 @@ class SessionService:
             registry=registry,
             llm=llm,
             event_callback=event_callback,
-            max_iterations=50,
+            max_iterations=int(os.getenv("AGENT_MAX_ITER", "25")),
             persistent_memory=pm,
         )
         self._active_loops[session_id] = agent
