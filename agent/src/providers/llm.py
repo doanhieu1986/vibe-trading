@@ -31,6 +31,13 @@ if ChatOpenAI is not None:
         `reasoning`. Inbound paths normalize to additional_kwargs["reasoning_content"];
         outbound path re-injects it so strict providers (kimi-k2.5) accept
         multi-turn continuations.
+
+        Gemini 2.x/2.5 via the OpenAI-compatible endpoint additionally emits a
+        message-level ``thought_signature`` alongside ``tool_calls`` when
+        thinking is enabled. The signature must be echoed back on the next
+        request or Gemini rejects the call with ``Function call is missing a
+        thought_signature in functionCall parts``. We capture it on inbound
+        and re-inject on outbound, mirroring the reasoning_content flow.
         """
 
         @staticmethod
@@ -42,7 +49,10 @@ if ChatOpenAI is not None:
             result = super()._create_chat_result(response, generation_info)
             raw = response if isinstance(response, dict) else response.model_dump()
             for gen, choice in zip(result.generations, raw["choices"]):
-                self._capture(choice["message"], gen.message)
+                message = choice["message"]
+                self._capture(message, gen.message)
+                if signature := message.get("thought_signature"):
+                    gen.message.additional_kwargs["thought_signature"] = signature
             return result
 
         def _convert_chunk_to_generation_chunk(  # type: ignore[override]
@@ -74,6 +84,11 @@ if ChatOpenAI is not None:
             back to OpenAI wire format. Moonshot kimi-k2.5 also rejects
             assistant turns where ``content`` is null or ``reasoning_content``
             is absent, breaking ReAct continuations after a tool call (#39).
+
+            Gemini's OpenAI-compatible endpoint additionally requires
+            ``thought_signature`` to be echoed back on assistant turns that
+            originally carried one — otherwise multi-turn tool calls with
+            thinking enabled fail with INVALID_ARGUMENT.
             """
             payload = super()._get_request_payload(input_, stop=stop, **kwargs)
             messages = super()._convert_input(input_).to_messages()
@@ -83,6 +98,8 @@ if ChatOpenAI is not None:
                 if m.get("content") is None:
                     m["content"] = ""
                 m["reasoning_content"] = messages[i].additional_kwargs.get("reasoning_content", "")
+                if signature := messages[i].additional_kwargs.get("thought_signature"):
+                    m["thought_signature"] = signature
             return payload
 else:
     ChatOpenAIWithReasoning = None  # type: ignore
