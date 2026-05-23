@@ -193,6 +193,9 @@ class ContextBuilder:
             except Exception as exc:
                 logger.debug("Auto-recall failed: %s", exc)
 
+        import os
+        if os.getenv("AGENT_LANGUAGE", "").strip().lower() == "vi":
+            enriched = enriched + "\n\n(Hãy trả lời hoàn toàn bằng tiếng Việt.)"
         messages.append({"role": "user", "content": enriched})
         return messages
 
