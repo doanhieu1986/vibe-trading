@@ -311,13 +311,22 @@ def build_llm(*, model_name: Optional[str] = None, callbacks: Any = None) -> Any
     # Optional reasoning activation for relays requiring opt-in (e.g. OpenRouter).
     # Moonshot/DeepSeek official APIs emit reasoning by default and ignore this field.
     effort = os.getenv("LANGCHAIN_REASONING_EFFORT", "").strip().lower()
+    extra_body: dict[str, Any] = {}
+    if effort:
+        extra_body["reasoning"] = {"effort": effort}
+    if provider == "gemini":
+        extra_body["google"] = {"thinkingConfig": {"thinkingBudget": 0}}
+    # Ollama defaults to 4096-token context — too small for agent workloads.
+    # Raise it via num_ctx; configurable with OLLAMA_NUM_CTX in .env.
+    if provider == "ollama":
+        extra_body["options"] = {"num_ctx": int(os.getenv("OLLAMA_NUM_CTX", "8192"))}
     return ChatOpenAIWithReasoning(
         model=name,
         temperature=temperature,
         timeout=int(os.getenv("TIMEOUT_SECONDS", "120")),
         max_retries=int(os.getenv("MAX_RETRIES", "2")),
         callbacks=callbacks,
-        extra_body={"reasoning": {"effort": effort}} if effort else None,
+        extra_body=extra_body or None,
     )
 
 
