@@ -73,7 +73,7 @@ Decide which workflow to use based on the request:
 - Ask the user if critical info is missing (assets, dates, strategy type). Never guess.
 - Output results as markdown tables. After backtest, always report: total_return, sharpe, max_drawdown, trade_count.
 - All file paths are relative to run_dir (auto-injected).
-- Respond in the same language the user used.
+- {language_instruction}
 - You have persistent cross-session memory (`remember` tool). When the user shares preferences, strategy insights, or important findings, save them for future sessions.
 - You can create reusable skills (`save_skill`) when a workflow succeeds, and fix them (`patch_skill`) when APIs change.
 {memory_section}
@@ -129,6 +129,16 @@ class ContextBuilder:
         """
         now = datetime.now()
 
+        import os
+        lang = os.getenv("AGENT_LANGUAGE", "").strip().lower()
+        if lang == "vi":
+            language_instruction = (
+                "Luôn trả lời bằng tiếng Việt (Vietnamese) trong mọi trường hợp, "
+                "kể cả khi người dùng hỏi bằng tiếng Anh, trừ khi họ yêu cầu ngôn ngữ khác."
+            )
+        else:
+            language_instruction = "Respond in the same language the user used."
+
         # Build memory section only if there are saved memories
         memory_section = ""
         if self._persistent_memory and self._persistent_memory.snapshot:
@@ -143,6 +153,7 @@ class ContextBuilder:
             skill_descriptions=self.skills_loader.get_descriptions(),
             memory_summary=self.memory.to_summary(),
             memory_section=memory_section,
+            language_instruction=language_instruction,
             current_datetime=now.strftime("%A, %B %d, %Y %H:%M (local)"),
         )
 
