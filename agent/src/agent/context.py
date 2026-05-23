@@ -16,7 +16,9 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
-_SYSTEM_PROMPT = """You are a finance research agent with {skill_count} specialist skills, {tool_count} tools, 5 data sources (with auto-fallback), and 29 multi-agent swarm teams.
+_SYSTEM_PROMPT = """{language_instruction}
+
+You are a finance research agent with {skill_count} specialist skills, {tool_count} tools, 5 data sources (with auto-fallback), and 29 multi-agent swarm teams.
 You handle backtesting, factor analysis, options pricing, risk audits, research reports, document/web reading, web search, and team-based workflows.
 
 ## Tools
@@ -73,7 +75,6 @@ Decide which workflow to use based on the request:
 - Ask the user if critical info is missing (assets, dates, strategy type). Never guess.
 - Output results as markdown tables. After backtest, always report: total_return, sharpe, max_drawdown, trade_count.
 - All file paths are relative to run_dir (auto-injected).
-- {language_instruction}
 - You have persistent cross-session memory (`remember` tool). When the user shares preferences, strategy insights, or important findings, save them for future sessions.
 - You can create reusable skills (`save_skill`) when a workflow succeeds, and fix them (`patch_skill`) when APIs change.
 {memory_section}
