@@ -285,11 +285,42 @@ Round-trip cost:      ~0.45% (fee 0.15%×2 + tax 0.10% + spread ~5 bps)
 5. **Holiday calendar**: market closes for Tet (Lunar New Year, ~5 trading days end Jan / early Feb), Reunification + Labour Day (Apr 30 + May 1), National Day (Sep 2 + 1) — these create gaps and pre-holiday volume drops
 6. **Currency**: prices quoted in VND; for USD-based portfolios apply USD/VND of ~24,500–26,000 (managed float band) and track SBV intervention signals
 
+## Vietnamese News & Data Sources
+
+When searching for Vietnamese market news, **always use `region="vn-vi"`** in `web_search` and prefer these sources:
+
+| Source | URL | Nội dung |
+|---|---|---|
+| CafeF | cafef.vn | Tin tức tài chính, phân tích cổ phiếu, BCTC |
+| Vietstock | vietstock.vn | Phân tích kỹ thuật, dữ liệu giao dịch |
+| VnEconomy | vneconomy.vn | Kinh tế vĩ mô, chính sách |
+| Tinnhanh CK | tinnhanhchungkhoan.vn | Tin chứng khoán nhanh |
+| NDH | ndh.vn | Tin doanh nghiệp, nhịp điệu thị trường |
+| Fireant | fireant.vn | Cộng đồng đầu tư, tin tức real-time |
+| HOSE chính thức | hsx.vn | Công bố thông tin chính thức HoSE |
+| HNX chính thức | hnx.vn | Công bố thông tin chính thức HNX |
+| SSI Research | ssi.com.vn/Research | Báo cáo phân tích từ SSI |
+| Viet Capital | vcsc.com.vn | Báo cáo VCSC |
+| FiinGroup | fiingroup.vn | Dữ liệu cơ bản, FiinPro (trả phí) |
+
+**Search patterns for Vietnamese market:**
+```
+# Tin tức cổ phiếu cụ thể
+web_search(query="VCB kết quả kinh doanh 2024 site:cafef.vn OR site:vietstock.vn", region="vn-vi")
+
+# Tin vĩ mô
+web_search(query="SBV lãi suất tháng 5 2025", region="vn-vi", max_results=8)
+
+# Công bố thông tin chính thức
+web_search(query="HPG công bố thông tin site:hsx.vn", region="vn-vi")
+
+# Phân tích chuyên sâu
+web_search(query="VN30 phân tích kỹ thuật site:vietstock.vn", region="vn-vi")
+```
+
 ## Dependencies
 
 ```bash
-# Suggested data libraries for Vietnamese equity data
 pip install vnstock         # Vietnamese ticker fundamentals + OHLCV
 pip install pandas numpy
-# Web sources: cafef.vn, vietstock.vn, fialda.com, ssi.com.vn, fiinpro (paid)
 ```

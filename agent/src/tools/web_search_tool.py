@@ -42,6 +42,11 @@ class WebSearchTool(BaseTool):
                 "description": "Maximum number of results to return (default 5, max 10)",
                 "default": 5,
             },
+            "region": {
+                "type": "string",
+                "description": "DuckDuckGo region code for localised results, e.g. 'vn-vi' for Vietnam, 'us-en' for US (default 'wt-wt' = worldwide).",
+                "default": "wt-wt",
+            },
         },
         "required": ["query"],
     }
@@ -58,6 +63,7 @@ class WebSearchTool(BaseTool):
         """
         query = kwargs["query"]
         max_results = min(int(kwargs.get("max_results", 5)), 10)
+        region = kwargs.get("region", "wt-wt")
 
         try:
             try:
@@ -66,7 +72,7 @@ class WebSearchTool(BaseTool):
                 from duckduckgo_search import DDGS
 
             with DDGS() as ddgs:
-                raw = list(ddgs.text(query, max_results=max_results))
+                raw = list(ddgs.text(query, region=region, max_results=max_results))
 
             results = [
                 {
