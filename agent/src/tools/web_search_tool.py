@@ -3,10 +3,15 @@
 from __future__ import annotations
 
 import json
+import os
 from typing import Any
 
 from src.agent.tools import BaseTool
 from src.security.scanner import with_security_warnings
+
+_DEFAULT_REGION = "vn-vi" if os.getenv("AGENT_LANGUAGE", "").strip().lower() == "vi" else "wt-wt"
+
+_VN_SOURCES = "cafef.vn OR vietstock.vn OR ndh.vn OR vneconomy.vn OR tinnhanhchungkhoan.vn OR fireant.vn OR hsx.vn OR hnx.vn"
 
 
 class WebSearchTool(BaseTool):
@@ -26,16 +31,26 @@ class WebSearchTool(BaseTool):
         except ImportError:
             return False
     description = (
-        "Search the web via DuckDuckGo. Returns top results with title, URL, "
-        "and snippet. Use this to find information, news, or URLs before "
-        "reading them with read_url."
+        "Search the web via DuckDuckGo. Returns top results with title, URL, and snippet. "
+        + (
+            "QUAN TRỌNG: Luôn ưu tiên tìm kiếm trên các trang tin tức Việt Nam. "
+            f"Thêm 'site:{_VN_SOURCES}' vào query khi tìm tin tức thị trường VN. "
+            "Ví dụ: query='VN-Index tuần này site:cafef.vn OR site:vietstock.vn'. "
+            "Region mặc định đã là 'vn-vi' (kết quả tiếng Việt). "
+            if _DEFAULT_REGION == "vn-vi" else
+            "Use this to find information, news, or URLs before reading them with read_url. "
+        )
     )
     parameters = {
         "type": "object",
         "properties": {
             "query": {
                 "type": "string",
-                "description": "Search query",
+                "description": (
+                    "Search query. Khi tìm tin tức VN: thêm 'site:cafef.vn OR site:vietstock.vn OR site:ndh.vn' để ưu tiên nguồn Việt Nam."
+                    if _DEFAULT_REGION == "vn-vi" else
+                    "Search query"
+                ),
             },
             "max_results": {
                 "type": "integer",
@@ -44,8 +59,8 @@ class WebSearchTool(BaseTool):
             },
             "region": {
                 "type": "string",
-                "description": "DuckDuckGo region code for localised results, e.g. 'vn-vi' for Vietnam, 'us-en' for US (default 'wt-wt' = worldwide).",
-                "default": "wt-wt",
+                "description": f"DuckDuckGo region code (default '{_DEFAULT_REGION}'). Use 'vn-vi' for Vietnam, 'us-en' for US.",
+                "default": _DEFAULT_REGION,
             },
         },
         "required": ["query"],
@@ -63,7 +78,7 @@ class WebSearchTool(BaseTool):
         """
         query = kwargs["query"]
         max_results = min(int(kwargs.get("max_results", 5)), 10)
-        region = kwargs.get("region", "wt-wt")
+        region = kwargs.get("region", _DEFAULT_REGION)
 
         try:
             try:
