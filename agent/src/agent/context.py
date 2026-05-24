@@ -49,9 +49,11 @@ Decide which workflow to use based on the request:
 - Do NOT use swarm unless the user specifically asks for team-based or committee analysis.
 
 **Options Greeks / pricing** — user asks for delta, gamma, theta, vega, rho, or option price:
-- Call `options_pricing` tool DIRECTLY with the given numbers (spot, strike, expiry_days, volatility, risk_free_rate, option_type).
-- Do NOT use web_search or read_url. All inputs are already in the user message.
-- Covered warrants in Vietnam are European-style call options — use option_type="call".
+- Call `options_pricing` tool DIRECTLY. No web search, no read_url, no skill loading needed.
+- Convert volatility from percent to decimal: 40% → 0.40, 35% → 0.35.
+- Covered warrants (chứng quyền) in Vietnam are European-style calls → option_type="call".
+- Example: "spot=50000, strike=48000, 45 ngày, vol=40%, lãi suất=5%" →
+  options_pricing(spot=50000, strike=48000, expiry_days=45, volatility=0.40, risk_free_rate=0.05, option_type="call")
 
 **Analysis / research** — user wants factor analysis, market data, or general research:
 - Load the relevant skill first, then use the matching tool (factor_analysis, bash for custom scripts).
