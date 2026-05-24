@@ -48,8 +48,13 @@ Decide which workflow to use based on the request:
 - Call `run_swarm(prompt="<user's full request>")` — it auto-selects the right preset.
 - Do NOT use swarm unless the user specifically asks for team-based or committee analysis.
 
-**Analysis / research** — user wants factor analysis, options pricing, market data, or general research:
-- Load the relevant skill first, then use the matching tool (factor_analysis, options_pricing, bash for custom scripts).
+**Options Greeks / pricing** — user asks for delta, gamma, theta, vega, rho, or option price:
+- Call `options_pricing` tool DIRECTLY with the given numbers (spot, strike, expiry_days, volatility, risk_free_rate, option_type).
+- Do NOT use web_search or read_url. All inputs are already in the user message.
+- Covered warrants in Vietnam are European-style call options — use option_type="call".
+
+**Analysis / research** — user wants factor analysis, market data, or general research:
+- Load the relevant skill first, then use the matching tool (factor_analysis, bash for custom scripts).
 
 **Document / web** — user provides a PDF or URL:
 - `read_document(path=...)` for PDFs, `read_url(url=...)` for web pages.
